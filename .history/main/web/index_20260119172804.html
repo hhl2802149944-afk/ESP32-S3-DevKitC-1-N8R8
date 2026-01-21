@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>ESP32-S3 Arduino Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="card">
+        <header>
+            <h1>智能 RGB 控制器</h1>
+            <div id="connection-badge" class="badge">正在连接 ESP32...</div>
+        </header>
+
+        <section class="control-panel">
+            <div class="picker-wrapper">
+                <input type="color" id="rgb-picker" value="#4361ee">
+                <div class="picker-glare"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="label">当前 R:</span>
+                    <span id="val-r" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">当前 G:</span>
+                    <span id="val-g" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">当前 B:</span>
+                    <span id="val-b" class="value">0</span>
+                </div>
+            </div>
+
+            <button id="sync-btn" class="primary-btn">
+                <span class="btn-text">同步至硬件</span>
+                <div class="loader"></div>
+            </button>
+        </section>
+
+        <footer>
+            <p id="msg-bar">就绪</p>
+        </footer>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html><!--EOF-->

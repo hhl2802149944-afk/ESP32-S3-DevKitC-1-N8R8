@@ -1,0 +1,3 @@
+idf_component_register(SRCS "hello_world_main.cpp" "ble_server.cpp"
+                       PRIV_REQUIRES esp_driver_gpio led_strip nvs_flash bt
+                       INCLUDE_DIRS ".")
