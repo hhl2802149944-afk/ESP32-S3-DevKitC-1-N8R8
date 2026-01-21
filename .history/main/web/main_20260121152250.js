@@ -98,15 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         valB.innerText = parseInt(hex.substring(4,6), 16);
     });
 
-    speedSlider.addEventListener('input', (e) => {
-        speedVal.innerText = e.target.value;
-    });
-
-    speedSlider.addEventListener('change', async (e) => {
-        const val = e.target.value;
-        sendBleCommand(`spd${val}`);
-    });
-
     window.motorAction = async (id, dir) => {
         const cmdMap = {
             '1': { 'forward': 'm1f', 'backward': 'm1b', 'stop': 'm1s' },
