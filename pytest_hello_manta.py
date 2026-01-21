@@ -13,15 +13,15 @@ from pytest_embedded_qemu.dut import QemuDut
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets', 'preview_targets'], indirect=['target'])
-def test_hello_world(dut: IdfDut, log_minimum_free_heap_size: Callable[..., None]) -> None:
-    dut.expect('Hello world!')
+def test_hello_manta(dut: IdfDut, log_minimum_free_heap_size: Callable[..., None]) -> None:
+    dut.expect('ESP32-S3 BACKEND STARTING')
     log_minimum_free_heap_size()
 
 
 @pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
-def test_hello_world_linux(dut: IdfDut) -> None:
-    dut.expect('Hello world!')
+def test_hello_manta_linux(dut: IdfDut) -> None:
+    dut.expect('ESP32-S3 BACKEND STARTING')
 
 
 @pytest.mark.host_test
