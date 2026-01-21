@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>ESP32-S3 Arduino Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="card">
+        <header>
+            <h1>智能 RGB 控制器</h1>
+            <div id="connection-badge" class="badge">蓝牙未连接</div>
+            <button id="ble-connect-btn" class="primary-btn" style="margin-top: 5px; padding: 5px 10px; background: #6366f1;">
+                连接蓝牙设备
+            </button>
+        </header>
+
+        <section class="control-panel">
+            <div class="picker-wrapper">
+                <input type="color" id="rgb-picker" value="#4361ee">
+                <div class="picker-glare"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="label">当前 R:</span>
+                    <span id="val-r" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">当前 G:</span>
+                    <span id="val-g" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">当前 B:</span>
+                    <span id="val-b" class="value">0</span>
+                </div>
+            </div>
+
+            <button id="sync-btn" class="primary-btn">
+                <span class="btn-text">同步至硬件</span>
+                <div class="loader"></div>
+            </button>
+
+            <div class="motor-controls">
+                <h3>电机控制</h3>
+                <div style="margin-bottom: 20px;">
+                    <label for="speed-slider" style="display: block; margin-bottom: 5px;">电机速度 (Delay): <span id="speed-val">20</span>ms</label>
+                    <input type="range" id="speed-slider" min="10" max="100" value="20" style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #666;">
+                        <span>快 (10ms)</span>
+                        <span>慢 (100ms)</span>
+                    </div>
+                </div>
+
+                <h3>电机 1 控制</h3>
+                <div class="btn-group">
+                    <button class="motor-btn" onclick="motorAction(1, 'forward')">前进</button>
+                    <button class="motor-btn danger" onclick="motorAction(1, 'stop')">停止</button>
+                    <button class="motor-btn" onclick="motorAction(1, 'backward')">后退</button>
+                </div>
+                <h3 style="margin-top:1.5rem">电机 2 控制</h3>
+                <div class="btn-group">
+                    <button class="motor-btn" onclick="motorAction(2, 'forward')">前进</button>
+                    <button class="motor-btn danger" onclick="motorAction(2, 'stop')">停止</button>
+                    <button class="motor-btn" onclick="motorAction(2, 'backward')">后退</button>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p id="msg-bar">就绪</p>
+        </footer>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
+
