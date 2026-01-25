@@ -9,10 +9,11 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "esp_sleep.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
 #include "ble_server.h"
 #include "shared_state.h"
 
-extern "C" {
+#define CAM_UART_PORT UART_NUM_1
 
 static const char *TAG = "BLE_CONTROL";
 static uint8_t ble_addr_type;
@@ -34,26 +35,16 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
         .uuid = (ble_uuid_t *)&gatt_svr_svc_uuid,
-        .includes = NULL,
         .characteristics = (struct ble_gatt_chr_def[]) {
             {
                 .uuid = (ble_uuid_t *)&gatt_svr_chr_uuid,
                 .access_cb = gatt_svr_chr_access,
-                .arg = NULL,
-                .descriptors = NULL,
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP,
-                .min_key_size = 0,
-                .val_handle = NULL,
-                .cpfd = NULL,
             },
-            {
-                .uuid = NULL,
-            }
+            {0}
         },
     },
-    {
-        .type = 0,
-    }
+    {0}
 };
 
 static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
@@ -95,6 +86,9 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         else if (strcmp(buf, "m2f") == 0) motor2_state = M_FORWARD;
         else if (strcmp(buf, "m2b") == 0) motor2_state = M_BACKWARD;
         else if (strcmp(buf, "m2s") == 0) motor2_state = M_STOP;
+        else if (strcmp(buf, "m3f") == 0) motor3_state = M_FORWARD;
+        else if (strcmp(buf, "m3b") == 0) motor3_state = M_BACKWARD;
+        else if (strcmp(buf, "m3s") == 0) motor3_state = M_STOP;
         else if (strncmp(buf, "rgb", 3) == 0 && strlen(buf) >= 9) {
             int r, g, b;
             if (sscanf(buf + 3, "%02x%02x%02x", &r, &g, &b) == 3) {
@@ -122,6 +116,10 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             // 使用 ext0 唤醒：GPIO 0 (BOOT 按键), 低电平(0)唤醒
             esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
             esp_deep_sleep_start();
+        }
+        else if (strncmp(buf, "cam:", 4) == 0) {
+            uart_write_bytes(CAM_UART_PORT, buf + 4, strlen(buf + 4));
+            ESP_LOGI(TAG, "Forwarded to Camera: %s", buf + 4);
         }
     }
     return 0;
@@ -159,7 +157,7 @@ void device_host_task(void *param) {
 
 void start_ble_server(void) {
     nimble_port_init();
-    ble_svc_gap_device_name_set("ESP32S3-Motor-Control");
+    ble_svc_gap_device_name_set("Hello_Manta");
     ble_svc_gap_init();
     ble_svc_gatt_init();
     ble_gatts_count_cfg(gatt_svr_svcs);
@@ -167,5 +165,4 @@ void start_ble_server(void) {
     
     ble_hs_cfg.sync_cb = ble_app_on_sync;
     nimble_port_freertos_init(device_host_task);
-}
 }

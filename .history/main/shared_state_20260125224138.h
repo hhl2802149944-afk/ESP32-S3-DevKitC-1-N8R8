@@ -18,15 +18,10 @@ extern MotorState motor2_state;
 extern int motor_step_delay;
 extern led_strip_handle_t led_strip;
 
-// 传感器实时数据
-typedef struct {
-    float acc_x, acc_y, acc_z;
-    float gyro_x, gyro_y, gyro_z;
-    double gps_lat, gps_lon;
-    int gps_sats;
-} SensorData;
-
-extern SensorData g_sensor_data;
+// 传感器数据
+extern float current_lat;
+extern float current_lon;
+extern float pitch, roll, yaw;
 
 #ifdef __cplusplus
 }

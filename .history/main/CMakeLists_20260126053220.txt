@@ -1,0 +1,4 @@
+idf_component_register(SRCS "hello_manta.cpp" "ble_server.cpp" "web_server.cpp"
+                       PRIV_REQUIRES driver esp_driver_gpio esp_driver_ledc esp_driver_uart esp_driver_i2c led_strip nvs_flash bt esp_http_server esp_wifi esp_event esp_netif vfs
+                       INCLUDE_DIRS "."
+                       EMBED_FILES "web/index.html" "web/main.js" "web/style.css")

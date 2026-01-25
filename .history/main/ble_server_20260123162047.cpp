@@ -8,11 +8,8 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "esp_sleep.h"
-#include "driver/gpio.h"
 #include "ble_server.h"
 #include "shared_state.h"
-
-extern "C" {
 
 static const char *TAG = "BLE_CONTROL";
 static uint8_t ble_addr_type;
@@ -34,26 +31,16 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
         .uuid = (ble_uuid_t *)&gatt_svr_svc_uuid,
-        .includes = NULL,
         .characteristics = (struct ble_gatt_chr_def[]) {
             {
                 .uuid = (ble_uuid_t *)&gatt_svr_chr_uuid,
                 .access_cb = gatt_svr_chr_access,
-                .arg = NULL,
-                .descriptors = NULL,
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP,
-                .min_key_size = 0,
-                .val_handle = NULL,
-                .cpfd = NULL,
             },
-            {
-                .uuid = NULL,
-            }
+            {0}
         },
     },
-    {
-        .type = 0,
-    }
+    {0}
 };
 
 static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
@@ -119,8 +106,7 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             led_strip_clear(led_strip);
             led_strip_refresh(led_strip);
             vTaskDelay(pdMS_TO_TICKS(500));
-            // 使用 ext0 唤醒：GPIO 0 (BOOT 按键), 低电平(0)唤醒
-            esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
+            esp_deep_sleep_enable_gpio_wakeup(1ULL << 0, ESP_GPIO_WAKEUP_GPIO_LOW);
             esp_deep_sleep_start();
         }
     }
@@ -167,5 +153,4 @@ void start_ble_server(void) {
     
     ble_hs_cfg.sync_cb = ble_app_on_sync;
     nimble_port_freertos_init(device_host_task);
-}
 }

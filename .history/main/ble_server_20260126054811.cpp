@@ -46,14 +46,10 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .val_handle = NULL,
                 .cpfd = NULL,
             },
-            {
-                .uuid = NULL,
-            }
+            {0}
         },
     },
-    {
-        .type = 0,
-    }
+    {0}
 };
 
 static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,

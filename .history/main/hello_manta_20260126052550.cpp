@@ -4,31 +4,20 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "nvs_flash.h"
 #include "led_strip.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "driver/uart.h"
-// #include "ble_server.h"
+#include "ble_server.h"
 #include "web_server.h"
 #include "shared_state.h"
 
 // ================= 硬件引脚配置 (适配 IBT_2 接线) =================
 #define RGB_LED_PIN     38
-#define M1_RPWM_PIN     4   // Motor 1 Right PWM
-#define M1_LPWM_PIN     5   // Motor 1 Left PWM
-#define M2_RPWM_PIN     6   // Motor 2 Right PWM
-#define M2_LPWM_PIN     7   // Motor 2 Left PWM
 
-#define I2C_SDA_PIN     15  // IMU SDA
-#define I2C_SCL_PIN     16  // IMU SCL
-
-#define GPS_TX_PIN      17  // GPS UART TX (Connected to GPS RX)
-#define GPS_RX_PIN      18  // GPS UART RX (Connected to GPS TX)
-#define UART_NUM_GPS    UART_NUM_2
-
+// ... (此处省略部分变量定义)
 static const char *TAG = "MANTA_CORE";
 led_strip_handle_t led_strip;
 
@@ -36,7 +25,7 @@ led_strip_handle_t led_strip;
 MotorState motor1_state = M_STOP;
 MotorState motor2_state = M_STOP;
 int motor_step_delay = 50; 
-SensorData g_sensor_data = {}; // 初始化传感器数据
+SensorData g_sensor_data = {0}; // 初始化传感器数据
 
 // ================= PWM (LEDC) 初始化 =================
 void init_motors_pwm() {
@@ -49,46 +38,10 @@ void init_motors_pwm() {
     ledc_timer_config(&ledc_timer);
 
     // 通道配置
-    ledc_channel_config_t ch0 = {
-        .gpio_num = M1_RPWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
-        .hpoint = 0,
-        .flags = {0}
-    };
-    ledc_channel_config_t ch1 = {
-        .gpio_num = M1_LPWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_1,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
-        .hpoint = 0,
-        .flags = {0}
-    };
-    ledc_channel_config_t ch2 = {
-        .gpio_num = M2_RPWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_2,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
-        .hpoint = 0,
-        .flags = {0}
-    };
-    ledc_channel_config_t ch3 = {
-        .gpio_num = M2_LPWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_3,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
-        .hpoint = 0,
-        .flags = {0}
-    };
+    ledc_channel_config_t ch0 = {.gpio_num=M1_RPWM_PIN, .speed_mode=LEDC_LOW_SPEED_MODE, .channel=LEDC_CHANNEL_0, .timer_sel=LEDC_TIMER_0, .duty=0, .hpoint=0};
+    ledc_channel_config_t ch1 = {.gpio_num=M1_LPWM_PIN, .speed_mode=LEDC_LOW_SPEED_MODE, .channel=LEDC_CHANNEL_1, .timer_sel=LEDC_TIMER_0, .duty=0, .hpoint=0};
+    ledc_channel_config_t ch2 = {.gpio_num=M2_RPWM_PIN, .speed_mode=LEDC_LOW_SPEED_MODE, .channel=LEDC_CHANNEL_2, .timer_sel=LEDC_TIMER_0, .duty=0, .hpoint=0};
+    ledc_channel_config_t ch3 = {.gpio_num=M2_LPWM_PIN, .speed_mode=LEDC_LOW_SPEED_MODE, .channel=LEDC_CHANNEL_3, .timer_sel=LEDC_TIMER_0, .duty=0, .hpoint=0};
 
     ledc_channel_config(&ch0);
     ledc_channel_config(&ch1);
@@ -133,16 +86,16 @@ void set_motor(int motor_id, MotorState state, int speed_pct) {
 
 // ================= 传感器初始化 =================
 void init_sensors() {
-    // I2C (IMU)
-    i2c_config_t conf = {};
-    conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = I2C_SDA_PIN;
-    conf.scl_io_num = I2C_SCL_PIN;
-    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = 400000;
-    i2c_param_config(I2C_NUM_0, &conf);
-    i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0);
+    // I2C (IMU) - 使用 ESP-IDF v5.x 新驱动 API
+    i2c_master_bus_config_t bus_conf = {};
+    bus_conf.i2c_port = I2C_NUM_0;
+    bus_conf.sda_io_num = (gpio_num_t)I2C_SDA_PIN;
+    bus_conf.scl_io_num = (gpio_num_t)I2C_SCL_PIN;
+    bus_conf.clk_source = I2C_CLK_SRC_DEFAULT;
+    bus_conf.glitch_ignore_cnt = 7;
+
+    i2c_master_bus_handle_t bus_handle;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_conf, &bus_handle));
 
     // UART (GPS)
     uart_config_t uart_conf = {};
@@ -160,11 +113,10 @@ void init_sensors() {
 // 电机控制循环，持续同步状态
 void motor_task(void *pvParameters) {
     while(1) {
-        // 直接使用 motor_step_delay 作为速度百分比 (10-100)
-        // 变量名虽然叫 delay 但现在实际存储的是速度值
-        int speed = motor_step_delay;
-        
-        if (speed < 0) speed = 0;
+        // 将 motor_step_delay (10-100) 映射回速度百分比
+        // 之前 10ms 是最快(100%)，100ms 是最慢(10%)
+        int speed = 110 - motor_step_delay;
+        if (speed < 10) speed = 10;
         if (speed > 100) speed = 100;
 
         set_motor(1, motor1_state, speed);
@@ -181,9 +133,6 @@ void sensor_task(void *pvParameters) {
         g_sensor_data.acc_x = (rand() % 100) / 50.0f;
         g_sensor_data.acc_y = (rand() % 100) / 50.0f;
         g_sensor_data.acc_z = 9.8f + (rand() % 20) / 100.0f;
-        g_sensor_data.gyro_x = (rand() % 100) / 100.0f;
-        g_sensor_data.gyro_y = (rand() % 100) / 100.0f;
-        g_sensor_data.gyro_z = (rand() % 100) / 100.0f;
         
         // --- 模拟 GPS 数据 ---
         g_sensor_data.gps_lat = 31.23 + (rand() % 1000) / 1000000.0;
@@ -191,48 +140,6 @@ void sensor_task(void *pvParameters) {
         g_sensor_data.gps_sats = 8;
 
         vTaskDelay(pdMS_TO_TICKS(200)); 
-    }
-}
-
-// 全局命令处理函数 (供 HTTP 或 BLE 调用)
-extern "C" void process_global_command(const char *cmd) {
-    ESP_LOGI(TAG, "CMD Received: %s", cmd);
-
-    // RGB 控制: "rgbFF0000"
-    if (strncmp(cmd, "rgb", 3) == 0 && strlen(cmd) >= 9) {
-        char hex[3] = {0};
-        uint32_t r, g, b;
-        
-        hex[0] = cmd[3]; hex[1] = cmd[4]; r = strtol(hex, NULL, 16);
-        hex[0] = cmd[5]; hex[1] = cmd[6]; g = strtol(hex, NULL, 16);
-        hex[0] = cmd[7]; hex[1] = cmd[8]; b = strtol(hex, NULL, 16);
-        
-        led_strip_set_pixel(led_strip, 0, r, g, b);
-        led_strip_refresh(led_strip);
-    } 
-    // 速度控制: "spd50"
-    else if (strncmp(cmd, "spd", 3) == 0) {
-        int val = atoi(cmd + 3);
-        if (val >= 10 && val <= 100) {
-            motor_step_delay = val;
-        }
-    }
-    // 电机 1
-    else if (strcmp(cmd, "m1f") == 0) motor1_state = M_FORWARD;
-    else if (strcmp(cmd, "m1b") == 0) motor1_state = M_BACKWARD;
-    else if (strcmp(cmd, "m1s") == 0) motor1_state = M_STOP;
-    // 电机 2
-    else if (strcmp(cmd, "m2f") == 0) motor2_state = M_FORWARD;
-    else if (strcmp(cmd, "m2b") == 0) motor2_state = M_BACKWARD;
-    else if (strcmp(cmd, "m2s") == 0) motor2_state = M_STOP;
-    // 关机
-    else if (strcmp(cmd, "off") == 0) {
-        // 关闭电机
-        motor1_state = M_STOP;
-        motor2_state = M_STOP;
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        // 进入深度睡眠
-        esp_deep_sleep_start();
     }
 }
 
@@ -267,7 +174,7 @@ extern "C" void app_main(void) {
     xTaskCreatePinnedToCore(sensor_task, "sensor_task", 4096, NULL, 4, NULL, 1);
     
     // 启动蓝牙
-    // start_ble_server();
+    start_ble_server();
     
     ESP_LOGI(TAG, "Manta 24V PWM System Ready with Dashboard.");
 }

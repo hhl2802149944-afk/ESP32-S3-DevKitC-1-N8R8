@@ -12,8 +12,6 @@
 #include "ble_server.h"
 #include "shared_state.h"
 
-extern "C" {
-
 static const char *TAG = "BLE_CONTROL";
 static uint8_t ble_addr_type;
 void ble_app_advertise(void);
@@ -34,26 +32,16 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
         .uuid = (ble_uuid_t *)&gatt_svr_svc_uuid,
-        .includes = NULL,
         .characteristics = (struct ble_gatt_chr_def[]) {
             {
                 .uuid = (ble_uuid_t *)&gatt_svr_chr_uuid,
                 .access_cb = gatt_svr_chr_access,
-                .arg = NULL,
-                .descriptors = NULL,
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP,
-                .min_key_size = 0,
-                .val_handle = NULL,
-                .cpfd = NULL,
             },
-            {
-                .uuid = NULL,
-            }
+            {0}
         },
     },
-    {
-        .type = 0,
-    }
+    {0}
 };
 
 static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
@@ -95,6 +83,9 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         else if (strcmp(buf, "m2f") == 0) motor2_state = M_FORWARD;
         else if (strcmp(buf, "m2b") == 0) motor2_state = M_BACKWARD;
         else if (strcmp(buf, "m2s") == 0) motor2_state = M_STOP;
+        else if (strcmp(buf, "m3f") == 0) motor3_state = M_FORWARD;
+        else if (strcmp(buf, "m3b") == 0) motor3_state = M_BACKWARD;
+        else if (strcmp(buf, "m3s") == 0) motor3_state = M_STOP;
         else if (strncmp(buf, "rgb", 3) == 0 && strlen(buf) >= 9) {
             int r, g, b;
             if (sscanf(buf + 3, "%02x%02x%02x", &r, &g, &b) == 3) {
@@ -167,5 +158,4 @@ void start_ble_server(void) {
     
     ble_hs_cfg.sync_cb = ble_app_on_sync;
     nimble_port_freertos_init(device_host_task);
-}
 }

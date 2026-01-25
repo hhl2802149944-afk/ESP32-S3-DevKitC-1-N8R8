@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "nvs_flash.h"
 #include "led_strip.h"
 #include "driver/gpio.h"
@@ -160,11 +159,10 @@ void init_sensors() {
 // 电机控制循环，持续同步状态
 void motor_task(void *pvParameters) {
     while(1) {
-        // 直接使用 motor_step_delay 作为速度百分比 (10-100)
-        // 变量名虽然叫 delay 但现在实际存储的是速度值
-        int speed = motor_step_delay;
-        
-        if (speed < 0) speed = 0;
+        // 将 motor_step_delay (10-100) 映射回速度百分比
+        // 之前 10ms 是最快(100%)，100ms 是最慢(10%)
+        int speed = 110 - motor_step_delay;
+        if (speed < 10) speed = 10;
         if (speed > 100) speed = 100;
 
         set_motor(1, motor1_state, speed);

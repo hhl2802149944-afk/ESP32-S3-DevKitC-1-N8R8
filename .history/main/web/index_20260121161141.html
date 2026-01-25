@@ -10,8 +10,11 @@
 <body>
     <div id="app" class="card">
         <header>
-            <h1>智能控制终端</h1>
-            <div id="connection-badge" class="badge" style="background:#dcfce7; color:#166534;">WiFi 已连接</div>
+            <h1>智能 RGB 控制器</h1>
+            <div id="connection-badge" class="badge">蓝牙未连接</div>
+            <button id="ble-connect-btn" class="primary-btn" style="margin-top: 5px; padding: 5px 10px; background: #6366f1;">
+                连接蓝牙设备
+            </button>
         </header>
 
         <section class="control-panel">
@@ -63,25 +66,6 @@
                     <button class="motor-btn danger" onclick="motorAction(2, 'stop')">停止</button>
                     <button class="motor-btn" onclick="motorAction(2, 'backward')">后退</button>
                 </div>
-            </div>
-
-            <div class="sensor-panel" style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
-                <h3>实时数据 Dashboard</h3>
-                <div class="sensor-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px; text-align: left;">
-                    <div class="sensor-card" style="background: #f8fafc; padding: 10px; border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #64748b;">IMU 姿态 (Acc / Gyro)</div>
-                        <div id="accel-val" style="font-weight: bold; font-family: monospace;">A: 0.0, 0.0, 9.8</div>
-                        <div id="gyro-val" style="font-weight: bold; font-family: monospace; color: #6366f1;">G: 0.0, 0.0, 0.0</div>
-                    </div>
-                    <div class="sensor-card" style="background: #f8fafc; padding: 10px; border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #64748b;">GPS 定位</div>
-                        <div id="gps-val" style="font-weight: bold; font-family: monospace;">0.000000, 0.000000</div>
-                        <div id="gps-sats" style="font-size: 0.8rem; color: #10b981;">卫星数: 0</div>
-                    </div>
-                </div>
-                <button id="shutdown-btn" class="primary-btn danger" style="margin-top: 15px; width: 100%; background: #ef4444;">
-                    系统下电并关机
-                </button>
             </div>
         </section>
 

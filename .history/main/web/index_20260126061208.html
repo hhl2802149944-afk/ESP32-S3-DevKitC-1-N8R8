@@ -67,16 +67,14 @@
 
             <div class="sensor-panel" style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
                 <h3>实时数据 Dashboard</h3>
-                <div class="sensor-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px; text-align: left;">
+                <div class="sensor-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;">
                     <div class="sensor-card" style="background: #f8fafc; padding: 10px; border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #64748b;">IMU 姿态 (Acc / Gyro)</div>
-                        <div id="accel-val" style="font-weight: bold; font-family: monospace;">A: 0.0, 0.0, 9.8</div>
-                        <div id="gyro-val" style="font-weight: bold; font-family: monospace; color: #6366f1;">G: 0.0, 0.0, 0.0</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">加速度 (G)</div>
+                        <div id="accel-val" style="font-weight: bold;">X: 0.0 Y: 0.0 Z: 9.8</div>
                     </div>
                     <div class="sensor-card" style="background: #f8fafc; padding: 10px; border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #64748b;">GPS 定位</div>
-                        <div id="gps-val" style="font-weight: bold; font-family: monospace;">0.000000, 0.000000</div>
-                        <div id="gps-sats" style="font-size: 0.8rem; color: #10b981;">卫星数: 0</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">GPS 坐标</div>
+                        <div id="gps-val" style="font-weight: bold;">0.00, 0.00</div>
                     </div>
                 </div>
                 <button id="shutdown-btn" class="primary-btn danger" style="margin-top: 15px; width: 100%; background: #ef4444;">

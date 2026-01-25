@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "nvs_flash.h"
 #include "led_strip.h"
 #include "driver/gpio.h"
@@ -160,11 +159,10 @@ void init_sensors() {
 // 电机控制循环，持续同步状态
 void motor_task(void *pvParameters) {
     while(1) {
-        // 直接使用 motor_step_delay 作为速度百分比 (10-100)
-        // 变量名虽然叫 delay 但现在实际存储的是速度值
-        int speed = motor_step_delay;
-        
-        if (speed < 0) speed = 0;
+        // 将 motor_step_delay (10-100) 映射回速度百分比
+        // 之前 10ms 是最快(100%)，100ms 是最慢(10%)
+        int speed = 110 - motor_step_delay;
+        if (speed < 10) speed = 10;
         if (speed > 100) speed = 100;
 
         set_motor(1, motor1_state, speed);
@@ -181,9 +179,6 @@ void sensor_task(void *pvParameters) {
         g_sensor_data.acc_x = (rand() % 100) / 50.0f;
         g_sensor_data.acc_y = (rand() % 100) / 50.0f;
         g_sensor_data.acc_z = 9.8f + (rand() % 20) / 100.0f;
-        g_sensor_data.gyro_x = (rand() % 100) / 100.0f;
-        g_sensor_data.gyro_y = (rand() % 100) / 100.0f;
-        g_sensor_data.gyro_z = (rand() % 100) / 100.0f;
         
         // --- 模拟 GPS 数据 ---
         g_sensor_data.gps_lat = 31.23 + (rand() % 1000) / 1000000.0;
@@ -191,48 +186,6 @@ void sensor_task(void *pvParameters) {
         g_sensor_data.gps_sats = 8;
 
         vTaskDelay(pdMS_TO_TICKS(200)); 
-    }
-}
-
-// 全局命令处理函数 (供 HTTP 或 BLE 调用)
-extern "C" void process_global_command(const char *cmd) {
-    ESP_LOGI(TAG, "CMD Received: %s", cmd);
-
-    // RGB 控制: "rgbFF0000"
-    if (strncmp(cmd, "rgb", 3) == 0 && strlen(cmd) >= 9) {
-        char hex[3] = {0};
-        uint32_t r, g, b;
-        
-        hex[0] = cmd[3]; hex[1] = cmd[4]; r = strtol(hex, NULL, 16);
-        hex[0] = cmd[5]; hex[1] = cmd[6]; g = strtol(hex, NULL, 16);
-        hex[0] = cmd[7]; hex[1] = cmd[8]; b = strtol(hex, NULL, 16);
-        
-        led_strip_set_pixel(led_strip, 0, r, g, b);
-        led_strip_refresh(led_strip);
-    } 
-    // 速度控制: "spd50"
-    else if (strncmp(cmd, "spd", 3) == 0) {
-        int val = atoi(cmd + 3);
-        if (val >= 10 && val <= 100) {
-            motor_step_delay = val;
-        }
-    }
-    // 电机 1
-    else if (strcmp(cmd, "m1f") == 0) motor1_state = M_FORWARD;
-    else if (strcmp(cmd, "m1b") == 0) motor1_state = M_BACKWARD;
-    else if (strcmp(cmd, "m1s") == 0) motor1_state = M_STOP;
-    // 电机 2
-    else if (strcmp(cmd, "m2f") == 0) motor2_state = M_FORWARD;
-    else if (strcmp(cmd, "m2b") == 0) motor2_state = M_BACKWARD;
-    else if (strcmp(cmd, "m2s") == 0) motor2_state = M_STOP;
-    // 关机
-    else if (strcmp(cmd, "off") == 0) {
-        // 关闭电机
-        motor1_state = M_STOP;
-        motor2_state = M_STOP;
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        // 进入深度睡眠
-        esp_deep_sleep_start();
     }
 }
 
